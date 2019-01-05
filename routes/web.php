@@ -15,4 +15,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::resource('disease', 'DiseaseController');
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');
