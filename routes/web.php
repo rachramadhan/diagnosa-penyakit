@@ -18,3 +18,7 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
+Route::get('/konsultasi', 'ConsultationController@index')->name('consultation.index');
+Route::post('/konsultasi', 'ConsultationController@store')->name('consultation.store');
+
+Route::resource('diseases', 'DiseaseController');
