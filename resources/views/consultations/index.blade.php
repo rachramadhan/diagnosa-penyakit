@@ -12,7 +12,7 @@
         <div class="clearfix"></div>
         <div class="box box-primary">
             <div class="box-body">
-                {!! Form::open(['route' => 'consultation.store']) !!}
+                {!! Form::open(['route' => 'consultation.store', "onsubmit" => "return false;", "id" => 'consultation-form']) !!}
                     <!-- Code Field -->
                     <div class="form-group col-sm-6">
                         {!! Form::label('diagnose', 'Keluhan:') !!}
@@ -27,9 +27,13 @@
                 {!! Form::close() !!}
             </div>
         </div>
-        <div class="text-center">
-
+        <div class="text-center hide" id="errors">
+            Gagal Terhubung ke Server
         </div>
     </div>
+    <div class="hide" id="answer"></div>
 @endsection
 
+@section('scripts')
+    @include('consultations.script')
+@endsection
