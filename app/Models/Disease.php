@@ -91,30 +91,39 @@ class Disease extends Model
      * Search disease by random input diagnose
      *
      * @param String $diagnose
+     * @param Boolean $singleReturn
      *
      * @return Object
      */
-    public function searchDiagnose( $diagnose )
+    public function searchDiagnose( $diagnose, $singleReturn = true )
     {
         $words = $this->breakParagraph( $diagnose );
+        \Log::info($words);
 
-        $query = "1 = 1";
+        $query = "";
 
         $wordKey = [];
 
         foreach ($words as $word => $count) {
-            $query .= " or diagnose like '%" . $word . "%'";
+            if ( $query == "" ) {
+                $query = "diagnose like '%" . $word . "%'";
+            } else {
+                $query .= " or diagnose like '%" . $word . "%'";
+            }
+
             $wordKey[] = $word;
         }
 
-        $diseases = $this->whereRaw( $query )->get();
+        $diseases = $this->whereRaw( $query );
+        \Log::info($diseases->toSql());
+        $diseases = $diseases->get();
 
         $finalResults = $this->calculateResult(
             $diseases
             , $wordKey
         );
 
-        return $this->getPercentage( $finalResults );
+        return $this->getPercentage( $finalResults, $singleReturn );
     }
 
     /**
@@ -181,7 +190,7 @@ class Disease extends Model
                 $finalResults[ $disease->id ][ "total" ] += $count;
 
                 if ( in_array( $diagnose, $words ) ) {
-                    $finalResults[ $disease->id ][ "count" ] += 1;
+                    $finalResults[ $disease->id ][ "count" ] += $count;
                 }
             }
         }
@@ -196,38 +205,54 @@ class Disease extends Model
      *
      * @return Array
      */
-    public function getPercentage( $finalResults )
+    public function getPercentage( $finalResults, $singleReturn = true )
     {
-        $percentages = [
-            "count" => 0
-            , "total" => 0
-            , "percentage" => 0
-            , "id" => 0
-        ];
+        $percentages = [];
+
+        if ( $singleReturn ) {
+            $percentages = [
+                "count" => 0
+                , "total" => 0
+                , "percentage" => 0
+                , "id" => 0
+            ];
+        }
 
         foreach ($finalResults as $id => $array) {
             $percentage = ( $array[ "count" ] / $array[ "total" ] ) * 100;
             $percentage = floor($percentage * 100) / 100;
 
-            if (
-                (
-                    ( $percentages[ "percentage" ] == $percentage )
-                    && ( $percentages[ "total" ] <= $array[ "total" ] )
-                )
-                || ( $percentages[ "percentage" ] < $percentage )
-            ) {
-                $percentages = $array;
-                $percentages[ "percentage" ] = $percentage;
-                $percentages[ "id" ] = $id;
+            if ( $singleReturn ) {
+                if (
+                    (
+                        ( $percentages[ "percentage" ] == $percentage )
+                        && ( $percentages[ "total" ] <= $array[ "total" ] )
+                    )
+                    || ( $percentages[ "percentage" ] < $percentage )
+                ) {
+                    $percentages = $array;
+                    $percentages[ "percentage" ] = $percentage;
+                    $percentages[ "id" ] = $id;
 
+                }
+            } else {
+                $percentages[] = [
+                    "count" => $array[ "count" ]
+                    , "total" => $array[ "total" ]
+                    , "percentage" => $percentage
+                    , "id" => $id
+                    , "disease" => $this->find( $id )
+                ];
             }
         }
 
-        $percentages[ 'disease' ] = null;
+        if ( $singleReturn ) {
+            $percentages[ 'disease' ] = null;
 
-        if ( $percentages[ 'percentage' ] >= 50 ) {
-            $percentages[ 'disease' ] = $this->find( $percentages[ "id" ] );
+            if ( $percentages[ 'percentage' ] >= 1 ) {
+                $percentages[ 'disease' ] = $this->find( $percentages[ "id" ] );
 
+            }
         }
 
         return $percentages;

@@ -36,12 +36,19 @@ class ConsultationController extends Controller
     public function store(Request $request)
     {
         $diagnose = $request->input('diagnose');
+        $singleReturn = false;
+        $disease = null;
 
-        $result = $this->disease->searchDiagnose( $diagnose );
+        $result = $this->disease->searchDiagnose( $diagnose, $singleReturn );
 
-        return view('consultations.show')
+        if ( $singleReturn ) {
+            $disease = $result[ "disease" ];
+        }
+
+        return view( 'consultations.show' )
             ->with( 'result', $result )
-            ->with( 'disease', $result[ "disease" ] )
-            ->with( 'diagnose', $diagnose );
+            ->with( 'disease', $disease )
+            ->with( 'diagnose', $diagnose )
+            ->with( 'singleReturn', $singleReturn );
     }
 }
